@@ -1,71 +1,65 @@
-const { request } = require('express')
-const { response } = require('express')
-const express = require('express')
-const uuid = require('uuid')
+const { request } = require("express");
+const { response } = require("express");
+const express = require("express");
+const uuid = require("uuid");
+const cors = require("cors");
 
+const port = 3001;
+const app = express();
+app.use(express.json());
+app.use(cors());
 
-const port = 3000
-const app = express()
-app.use(express.json())
-
-
-const users = []
+const users = [];
 
 const myFirstMiddleware = (request, response, next) => {
-    const { id } = request.params
+  const { id } = request.params;
 
-    const Index = users.findIndex(user => user.id === id)
+  const Index = users.findIndex((user) => user.id === id);
 
-    if (Index < 0) {
-        return response.status(404).json({ message: "User not found. Try again" })
-    }
+  if (Index < 0) {
+    return response.status(404).json({ message: "User not found. Try again" });
+  }
 
-    request.userIndex = Index
-    request.userId = id
+  request.userIndex = Index;
+  request.userId = id;
 
-    next()
-}
+  next();
+};
 
+app.get("/users", (request, response) => {
+  return response.json(users);
+});
 
-app.get('/users', (request, response) => {
+app.post("/users", (request, response) => {
+  const { name, age } = request.body;
 
-    return response.json(users)
-})
+  const user = { id: uuid.v4(), name, age };
 
-app.post('/users', (request, response) => {
-    const { name, age } = request.body
+  users.push(user);
 
-    const user = { id: uuid.v4(), name, age }
+  return response.status(201).json(users);
+});
 
-    users.push(user)
+app.put("/users/:id", myFirstMiddleware, (request, response) => {
+  const { name, age } = request.body;
+  const index = request.userIndex;
+  const id = request.userId;
 
-    return response.status(201).json(users)
-})
+  const userUpdated = { id, name, age };
 
-app.put('/users/:id', myFirstMiddleware, (request, response) => {
-    const { name, age } = request.body
-    const index = request.userIndex
-    const id = request.userId
+  users[index] = userUpdated;
 
-    const userUpdated = { id, name, age }
+  return response.json(userUpdated);
+});
 
+app.delete("/users/:id", myFirstMiddleware, (request, response) => {
+  const Index = request.userIndex;
 
-    users[index] = userUpdated
+  users.splice(Index, 1);
 
-    return response.json(userUpdated)
-})
-
-app.delete('/users/:id', myFirstMiddleware, (request, response) => {
-    const Index = request.userIndex
-
-    users.splice(Index, 1)
-
-    return response.status(204)
-})
-
-
-
+  return response.status(204);
+});
 
 app.listen(port, () => {
-    console.log(`💕 o servidor iniciou na porta ${port}`)
-})
+  console.log(`💕 o servidor iniciou na porta ${port}`);
+});
